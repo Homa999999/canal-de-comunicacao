@@ -54,11 +54,10 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-function montarTextoEmail({ protocolo, dataHora, nome, tipo, descricao }) {
+function montarTextoEmail({ dataHora, nome, tipo, descricao }) {
   return [
     "Nova Manifestação Recebida",
     "",
-    `Protocolo: ${protocolo}`,
     `Data/Hora: ${dataHora}`,
     `Nome: ${nome || "Não informado"}`,
     `Tipo: ${tipo}`,
@@ -144,7 +143,7 @@ function escaparHtml(texto = "") {
     .replace(/\n/g, "<br>");
 }
 
-function montarEmailHtml({ protocolo, dataHora, nome, tipo, descricao, anexos }) {
+function montarEmailHtml({ dataHora, nome, tipo, descricao, anexos }) {
   // ... igual ao original
   const listaAnexos = anexos.length > 0
     ? anexos.map(a => `
@@ -190,16 +189,6 @@ function montarEmailHtml({ protocolo, dataHora, nome, tipo, descricao, anexos })
                             <td style="padding:28px 32px 8px;">
                                 <table width="100%" cellpadding="0" cellspacing="0">
                                     <tr>
-                                        <td width="50%" style="padding:0 8px 16px 0; vertical-align:top;">
-                                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
-                                                <tr>
-                                                    <td style="padding:14px 16px;">
-                                                        <p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em;">Protocolo</p>
-                                                        <p style="margin:0; font-size:16px; font-weight:700; color:#4f46e5;">${escaparHtml(protocolo)}</p>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
                                         <td width="50%" style="padding:0 0 16px 8px; vertical-align:top;">
                                             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
                                                 <tr>
@@ -300,7 +289,6 @@ app.post("/enviar", (req, res) => {
     }
 
     try {
-      const protocolo = "NR1-" + Date.now().toString().slice(-6);
       const dataHora = formatarDataHora();
 
       const {
@@ -325,7 +313,6 @@ app.post("/enviar", (req, res) => {
       }
 
       const html = montarEmailHtml({
-          protocolo,
           dataHora,
           nome,
           tipo,
@@ -335,15 +322,14 @@ app.post("/enviar", (req, res) => {
 
       await enviarEmail({
         to: process.env.EMAIL_DESTINO,
-        subject: `Nova manifestação - ${tipo} - ${protocolo}`,
-        text: montarTextoEmail({ protocolo, dataHora, nome, tipo, descricao }),
+        subject: `Nova manifestação - ${tipo}`,
+        text: montarTextoEmail({ dataHora, nome, tipo, descricao }),
         html,
         attachments: anexos
       });
 
       return safeJson(200, {
         sucesso: true,
-        protocolo,
         dataHora
       });
 

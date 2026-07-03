@@ -54,7 +54,10 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const EMAIL_BCC = "portalvidasimples@gmail.com";
+const EMAIL_DESTINOS = [
+  "luquetabagre@gmail.com",
+  "andrehoma@uol.com.br"
+];
 
 function montarTextoEmail({ dataHora, nome, tipo, descricao }) {
   return [
@@ -69,7 +72,7 @@ function montarTextoEmail({ dataHora, nome, tipo, descricao }) {
   ].join("\n");
 }
 
-async function enviarEmailViaResend({ to, subject, text, html, attachments }) {
+async function enviarEmailViaResend({ subject, text, html, attachments }) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -78,8 +81,7 @@ async function enviarEmailViaResend({ to, subject, text, html, attachments }) {
     },
     body: JSON.stringify({
       from: process.env.RESEND_FROM || "Canal de Denúncias <onboarding@resend.dev>",
-      to: [to],
-      bcc: [EMAIL_BCC],
+      to: EMAIL_DESTINOS,
       subject,
       text,
       html,
@@ -112,15 +114,14 @@ async function enviarEmailViaSmtp(mailOptions) {
   ]);
 }
 
-async function enviarEmail({ to, subject, text, html, attachments }) {
+async function enviarEmail({ subject, text, html, attachments }) {
   if (process.env.RESEND_API_KEY) {
-    return enviarEmailViaResend({ to, subject, text, html, attachments });
+    return enviarEmailViaResend({ subject, text, html, attachments });
   }
 
   return enviarEmailViaSmtp({
     from: `"Canal de Denúncias" <${process.env.EMAIL}>`,
-    to,
-    bcc: EMAIL_BCC,
+    to: EMAIL_DESTINOS,
     subject,
     text,
     html,
@@ -325,7 +326,6 @@ app.post("/enviar", (req, res) => {
         });
 
       await enviarEmail({
-        to: process.env.EMAIL_DESTINO,
         subject: `Nova manifestação - ${tipo}`,
         text: montarTextoEmail({ dataHora, nome, tipo, descricao }),
         html,

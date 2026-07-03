@@ -3,13 +3,14 @@
  *
  * 1. Acesse https://script.google.com e crie um projeto novo
  * 2. Cole todo este arquivo em Code.gs
- * 3. Em "Propriedades do script" (engrenagem), adicione:
- *    EMAIL_DESTINO = e-mail que recebe as denúncias
+ * 3. Os e-mails são enviados para luquetabagre@gmail.com e andrehoma@uol.com.br
  * 4. Implantação > Nova implantação > App da Web
  *    - Executar como: Eu
  *    - Quem pode acessar: Qualquer pessoa
  * 5. Copie a URL terminada em /exec e cole no index.html (meta apps-script-url)
  */
+
+const EMAIL_DESTINOS = "luquetabagre@gmail.com,andrehoma@uol.com.br";
 
 function doGet() {
   return ContentService
@@ -31,11 +32,6 @@ function doPost(e) {
 
     if (!tipo || !descricao) {
       return respostaJson({ sucesso: false, erro: "Tipo e descrição são obrigatórios." }, 400);
-    }
-
-    const destino = PropertiesService.getScriptProperties().getProperty("EMAIL_DESTINO");
-    if (!destino) {
-      throw new Error("Configure EMAIL_DESTINO nas Propriedades do script.");
     }
 
     const dataHora = formatarDataHora();
@@ -62,11 +58,10 @@ function doPost(e) {
       anexos: nomesAnexos
     });
 
-    GmailApp.sendEmail(destino, assunto, texto, {
+    GmailApp.sendEmail(EMAIL_DESTINOS, assunto, texto, {
       htmlBody: html,
       attachments: blobsAnexo,
-      name: "Canal de Denúncias",
-      bcc: "portalvidasimples@gmail.com"
+      name: "Canal de Denúncias"
     });
 
     return respostaJson({ sucesso: true });

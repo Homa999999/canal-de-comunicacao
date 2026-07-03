@@ -3,80 +3,53 @@ const express = require("express");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
+app.use(cors());
+app.use(express.static(path.join(__dirname)));
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+        files: 10
+    }
+});
+
 const LIMITE_MB = 10;
 
-// Garantir parsing da rota .body (se vier form, já no multer, mas para JSON/adds)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// 1. Express: Revisão, Middlewares
-
-// CORS seguro para permitir apenas frontend de produção e desenvolvimento
-app.use(cors({
-  origin: [
-    "https://homa999999.github.io",               // troque para sua URL do GitHub Pages ao deplyar
-    "http://localhost:3000",
-    "http://localhost:5173"
-  ]
-}));
-
-// Healthcheck para a rota principal "/"
-// Isso faz com que GET / retorne uma resposta ao invés de "CANNOT GET /"
-app.get("/", (req, res) => {
-  res.send("API do Canal de Comunicação está ativa.");
-});
-
-// 2. Multer: Limitador de anexos
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
-    files: 10
-  }
-});
-
-// 3. Nodemailer: configuração recomendada para Render + Gmail
-
-// Problema: gmail com { service: 'gmail' } usa conexão especial, TODO provider bloqueia algumas clouds.
-// Use host/port/secure directos para SMTP para compatibilidade máxima.
-// Ref: https://nodemailer.com/smtp/
-// Para Gmail com senha de app:
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // true para 465, false para 587
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.EMAIL_PASSWORD
-  }
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASSWORD
+    }
 });
 
-// 4. Funções auxiliares (inalteradas)
 function formatarDataHora() {
-  const [data, hora] = new Date()
-    .toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" })
-    .split(" ");
-  const [ano, mes, dia] = data.split("-");
-  return `${dia}/${mes}/${ano} - ${hora}`;
+    const [data, hora] = new Date()
+        .toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" })
+        .split(" ");
+
+    const [ano, mes, dia] = data.split("-");
+    return `${dia}/${mes}/${ano} - ${hora}`;
 }
 
 function escaparHtml(texto = "") {
-  return String(texto)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/\n/g, "<br>");
+    return String(texto)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/\n/g, "<br>");
 }
 
 function montarEmailHtml({ protocolo, dataHora, nome, tipo, descricao, anexos }) {
-  // ... igual ao original
-  const listaAnexos = anexos.length > 0
-    ? anexos.map(a => `
+    const listaAnexos = anexos.length > 0
+        ? anexos.map(a => `
             <tr>
                 <td style="padding:6px 0; font-size:14px; color:#475569;">
                     <span style="display:inline-block; width:8px; height:8px; background:#7c3aed; border-radius:50%; margin-right:8px;"></span>
@@ -84,9 +57,9 @@ function montarEmailHtml({ protocolo, dataHora, nome, tipo, descricao, anexos })
                 </td>
             </tr>
         `).join("")
-    : "";
+        : "";
 
-  const blocoAnexos = anexos.length > 0 ? `
+    const blocoAnexos = anexos.length > 0 ? `
         <tr>
             <td style="padding:0 32px 24px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf5ff; border-radius:12px; border:1px solid #ede9fe;">
@@ -101,7 +74,7 @@ function montarEmailHtml({ protocolo, dataHora, nome, tipo, descricao, anexos })
         </tr>
     ` : "";
 
-  return `
+    return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <body style="margin:0; padding:0; background:#f1f5f9; font-family:'Segoe UI',Arial,sans-serif;">
@@ -194,125 +167,90 @@ function montarEmailHtml({ protocolo, dataHora, nome, tipo, descricao, anexos })
     `;
 }
 
-// 5. Rota POST /enviar revisada
-// IMPORTANTE: Corrigir req ficar pending para sempre (problema comum ao misturar callback e async).
-// Uso do padrão Promise para Multer para garantir resposta mesmo em erro.
 app.post("/enviar", (req, res) => {
-  // Promisificar o Multer
-  upload.array("anexos", 10)(req, res, async (err) => {
-    let responseSent = false;
-    function safeJson(status, body) {
-      if (!responseSent) {
-        responseSent = true;
-        res.status(status).json(body);
-      }
-    }
-    // Tratamento do erro do Multer
-    if (err) {
-      if (err.code === "LIMIT_FILE_SIZE") {
-        return safeJson(400, {
-          sucesso: false,
-          erro: `Cada arquivo deve ter no máximo ${LIMITE_MB}MB.`
+    upload.array("anexos", 10)(req, res, async (err) => {
+
+        if (err) {
+            if (err.code === "LIMIT_FILE_SIZE") {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: `Cada arquivo deve ter no máximo ${LIMITE_MB}MB.`
+                });
+            }
+            if (err.code === "LIMIT_FILE_COUNT") {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: "É permitido enviar no máximo 10 arquivos."
+                });
+            }
+            return res.status(400).json({
+                sucesso: false,
+                erro: err.message || "Erro ao processar os anexos."
+            });
+        }
+
+        try {
+
+        const protocolo = "NR1-" + Date.now().toString().slice(-6);
+        const dataHora = formatarDataHora();
+
+        const {
+            nome,
+            tipo,
+            descricao,
+            desejaResposta,
+            contato
+        } = req.body;
+
+        const anexos = (req.files || []).map(file => ({
+            filename: file.originalname,
+            content: file.buffer
+        }));
+
+        await transporter.sendMail({
+            from: `"Canal de Denúncias" <${process.env.EMAIL}>`,
+            to: process.env.EMAIL_DESTINO,
+            subject: `Nova manifestação - ${tipo} - ${protocolo}`,
+            text: [
+                "Nova Manifestação Recebida",
+                "",
+                `Protocolo: ${protocolo}`,
+                `Data/Hora: ${dataHora}`,
+                `Nome: ${nome || "Não informado"}`,
+                `Tipo: ${tipo}`,
+                "",
+                "Descrição:",
+                descricao
+            ].join("\n"),
+            html: montarEmailHtml({
+                protocolo,
+                dataHora,
+                nome,
+                tipo,
+                descricao,
+                anexos
+            }),
+            attachments: anexos
         });
-      }
-      if (err.code === "LIMIT_FILE_COUNT") {
-        return safeJson(400, {
-          sucesso: false,
-          erro: "É permitido enviar no máximo 10 arquivos."
+   
+
+        return res.json({
+            sucesso: true,
+            protocolo,
+            dataHora
         });
-      }
-      // Para outros erros do multer
-      return safeJson(400, {
-        sucesso: false,
-        erro: err.message || "Erro ao processar os anexos."
-      });
-    }
 
-    try {
-      const protocolo = "NR1-" + Date.now().toString().slice(-6);
-      const dataHora = formatarDataHora();
+        } catch (erro) {
+            console.error(erro);
+            return res.status(500).json({
+                sucesso: false,
+                erro: erro.message || "Erro ao enviar e-mail"
+            });
+        }
 
-      const {
-        nome,
-        tipo,
-        descricao,
-        desejaResposta,
-        contato
-      } = req.body;
-
-      const anexos = (req.files || []).map(file => ({
-        filename: file.originalname,
-        content: file.buffer
-      }));
-
-      // Validação mínima
-      if (!tipo || !descricao) {
-        return safeJson(400, {
-          sucesso: false,
-          erro: "Tipo e descrição são obrigatórios."
-        });
-      }
-
-      // O await do sendMail pode travar se as credenciais estiverem erradas ou se porta/bloqueio SMTP. Timeout padrão ~10s.
-      // Setar timeout de 20s para a promise do sendMail, para nunca pendurar indefinidamente
-      const sendMailPromise = transporter.sendMail({
-        from: `"Canal de Denúncias" <${process.env.EMAIL}>`,
-        to: process.env.EMAIL_DESTINO,
-        subject: `Nova manifestação - ${tipo} - ${protocolo}`,
-        text: [
-          "Nova Manifestação Recebida",
-          "",
-          `Protocolo: ${protocolo}`,
-          `Data/Hora: ${dataHora}`,
-          `Nome: ${nome || "Não informado"}`,
-          `Tipo: ${tipo}`,
-          "",
-          "Descrição:",
-          descricao
-        ].join("\n"),
-        html: montarEmailHtml({
-          protocolo,
-          dataHora,
-          nome,
-          tipo,
-          descricao,
-          anexos
-        }),
-        attachments: anexos
-      });
-
-      // timeout em 20s
-      const TIMEOUT_MS = 20000;
-
-      await Promise.race([
-        sendMailPromise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout ao enviar e-mail (SMTP fora do ar?).")), TIMEOUT_MS)
-        )
-      ]);
-
-      return safeJson(200, {
-        sucesso: true,
-        protocolo,
-        dataHora
-      });
-
-    } catch (erro) {
-      // Inclua mensagem de erro técnica SOMENTE para debug.
-      // Em produção, preferencialmente enviar apenas uma msg genérica.
-      console.error(erro);
-      return safeJson(500, {
-        sucesso: false,
-        erro: erro && erro.message
-          ? String(erro.message)
-          : "Erro interno ao enviar e-mail."
-      });
-    }
-  });
+    });
 });
 
-// 6. Inicialização do servidor
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+app.listen(process.env.PORT, () => {
+    console.log(`Servidor rodando na porta ${process.env.PORT}`);
 });

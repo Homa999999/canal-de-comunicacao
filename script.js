@@ -1,27 +1,5 @@
-/**
- * Revisão completa do JS Frontend:
- * 
- * NOTA IMPORTANTE SOBRE "CANNOT GET /":
- * Se ao acessar sua URL do Render ou localhost, aparece "CANNOT GET /",
- * significa que o backend (Express) não possui rota '/' definida para GET,
- * ou está rodando na porta errada, ou você abriu direto a porta do backend no navegador.
- * 
- * Para frontend funcionar, você precisa abrir o arquivo .html (Github Pages ou Vite/React no localhost),
- * e não acessar o backend diretamente!
- * 
- * O backend (server.js) deve ter algo assim:
- *     app.get("/", (req, res) => res.send("API do Canal de Comunicação está ativa."));
- * 
- * Se já tem essa rota, e mesmo assim abre "CANNOT GET /", provavelmente você
- * abriu o link direto do Render (backend) e não sua página HTML (frontend).
- * 
- * Então, para usar: entre em https://homa999999.github.io/canal-de-comunicacao/ ou seu frontend local,
- * e NÃO em https://canal-de-comunicacao.onrender.com/
- * 
- * JS abaixo funciona normalmente, só precisa garantir que está acessando o FRONTEND!
- */
-
 document.addEventListener("DOMContentLoaded", () => {
+
     const form = document.getElementById("form");
     const btnEnviar = document.getElementById("btn-enviar");
     const loadingOverlay = document.getElementById("loading-overlay");
@@ -96,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     form.addEventListener("submit", async (e) => {
+
         e.preventDefault();
 
         const erroAnexo = validarAnexos();
@@ -119,42 +98,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mostrarLoading();
 
-        // Adicionado timeout com AbortController para evitar fetch pendente para sempre
-        const controller = new AbortController();
-        const timeoutMs = 20000; // 20 segundos
-        const timeout = setTimeout(() => {
-            controller.abort();
-        }, timeoutMs);
-
         try {
-            const res = await fetch("https://canal-de-comunicacao.onrender.com/enviar", {
+
+            const res = await fetch("http://localhost:3000/enviar", {
                 method: "POST",
-                body: formData,
-                signal: controller.signal
-                // NÃO adicionar headers Content-Type - o browser fará isso com boundary
+                body: formData
             });
 
-            clearTimeout(timeout);
-
-            // Checar primeiro se response é OK e Content-Type = JSON
-            const contentType = res.headers.get("content-type") || "";
-            let data = null, rawText = null;
-
-            if (!contentType.includes("application/json")) {
-                // O backend retornou HTML ou texto, geralmente erro de infra!
-                rawText = await res.text();
-                throw new Error(
-                    "O servidor respondeu algo inesperado (Content-Type não é JSON). " +
-                    "Isto indica provável erro de configuração, rota incorreta, backend caído ou build incompleto. " +
-                    "Conteúdo recebido (os primeiros 200 caracteres):\n\n" +
-                    rawText.slice(0, 200)
-                );
-            } else {
-                data = await res.json();
-            }
+            const data = await res.json();
 
             if (!res.ok || !data.sucesso) {
-                throw new Error(data.erro || "Falha ao enviar o comunicado.");
+                throw new Error(data.erro || "Falha no envio");
             }
 
             ocultarLoading();
@@ -171,27 +125,18 @@ document.addEventListener("DOMContentLoaded", () => {
             atualizarListaArquivos();
 
         } catch (err) {
-            clearTimeout(timeout);
+            console.error(err);
             ocultarLoading();
-
-            let explicacao = "";
-            if (err.name === 'AbortError') {
-                explicacao = `\n\n→ O envio demorou demais e foi interrompido por timeout (${timeoutMs/1000}s). 
-Verifique sua conexão, tente novamente, ou entre em contato com o suporte se o problema persistir.`;
-            } else if (err.message && err.message.includes("<!DOCTYPE")) {
-                explicacao =
-                    "\n\n→ O backend possivelmente respondeu uma página HTML ou está fora do ar, retornando o conteúdo padrão. " +
-                    "Verifique se o endereço da API está correto, se o back está rodando e se está respondendo res.json().";
-            }
 
             Swal.fire({
                 icon: "error",
                 title: "Erro ao enviar",
-                text: (err.message || "Não foi possível enviar o comunicado. Tente novamente.") + explicacao,
+                text: err.message || "Não foi possível enviar o comunicado. Tente novamente.",
                 confirmButtonText: "OK",
                 confirmButtonColor: COR_PRIMARIA
             });
         }
+
     });
 
     const radios = document.querySelectorAll('input[name="resposta"]');
@@ -213,6 +158,7 @@ Verifique sua conexão, tente novamente, ou entre em contato com o suporte se o 
 
     tiposContato.forEach(radio => {
         radio.addEventListener("change", () => {
+
             if (radio.value === "telefone" && radio.checked) {
                 campoTelefone.classList.remove("hidden");
                 campoEmail.classList.add("hidden");
@@ -222,6 +168,8 @@ Verifique sua conexão, tente novamente, ou entre em contato com o suporte se o 
                 campoEmail.classList.remove("hidden");
                 campoTelefone.classList.add("hidden");
             }
+
         });
     });
+
 });

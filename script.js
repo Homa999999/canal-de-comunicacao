@@ -1,25 +1,19 @@
-/**
- * Revisão completa do JS Frontend:
- * 
- * NOTA IMPORTANTE SOBRE "CANNOT GET /":
- * Se ao acessar sua URL do Render ou localhost, aparece "CANNOT GET /",
- * significa que o backend (Express) não possui rota '/' definida para GET,
- * ou está rodando na porta errada, ou você abriu direto a porta do backend no navegador.
- * 
- * Para frontend funcionar, você precisa abrir o arquivo .html (Github Pages ou Vite/React no localhost),
- * e não acessar o backend diretamente!
- * 
- * O backend (server.js) deve ter algo assim:
- *     app.get("/", (req, res) => res.send("API do Canal de Comunicação está ativa."));
- * 
- * Se já tem essa rota, e mesmo assim abre "CANNOT GET /", provavelmente você
- * abriu o link direto do Render (backend) e não sua página HTML (frontend).
- * 
- * Então, para usar: entre em https://homa999999.github.io/canal-de-comunicacao/ ou seu frontend local,
- * e NÃO em https://canal-de-comunicacao.onrender.com/
- * 
- * JS abaixo funciona normalmente, só precisa garantir que está acessando o FRONTEND!
- */
+const RENDER_API_URL = "https://canal-de-comunicacao.onrender.com";
+
+function obterUrlApi() {
+    const { hostname, origin } = window.location;
+
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".onrender.com")) {
+        return origin;
+    }
+
+    const meta = document.querySelector('meta[name="api-url"]');
+    if (meta?.content) {
+        return meta.content.replace(/\/$/, "");
+    }
+
+    return RENDER_API_URL;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("form");
@@ -41,9 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
             fileList.textContent = "";
             return;
         }
-        process.on("uncaughtException", err => {
-            console.error("UNCAUGHT:", err);
-        });
         const nomes = Array.from(inputAnexos.files).map(f => f.name).join(", ");
         fileList.innerHTML = `<i class="fa-solid fa-file-circle-check"></i>${nomes}`;
         fileList.classList.remove("hidden");
@@ -124,14 +115,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Adicionado timeout com AbortController para evitar fetch pendente para sempre
         const controller = new AbortController();
-        const timeoutMs = 20000; // 20 segundos
+        const timeoutMs = 90000;
         const timeout = setTimeout(() => {
             controller.abort();
         }, timeoutMs);
 
         try {
+            const apiUrl = obterUrlApi();
 
-            const res = await fetch("https://canal-de-comunicacao.onrender.com/enviar", {
+            const res = await fetch(`${apiUrl}/enviar`, {
                 method: "POST",
                 body: formData,
                 signal: controller.signal
@@ -178,10 +170,14 @@ document.addEventListener("DOMContentLoaded", () => {
             clearTimeout(timeout);
             ocultarLoading();
 
+            const mensagem = err.name === "AbortError"
+                ? "O servidor demorou para responder. No plano gratuito do Render, a primeira requisição pode levar até 1 minuto. Tente novamente."
+                : (err.message || "Não foi possível enviar o comunicado. Tente novamente.");
+
             Swal.fire({
                 icon: "error",
                 title: "Erro ao enviar",
-                text: err.message || "Não foi possível enviar o comunicado. Tente novamente.",
+                text: mensagem,
                 confirmButtonText: "OK",
                 confirmButtonColor: COR_PRIMARIA
             });

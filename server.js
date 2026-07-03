@@ -1,13 +1,28 @@
 require("dotenv").config();
+const path = require("path");
+const dns = require("dns");
 const express = require("express");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 const cors = require("cors");
 
 const app = express();
+const LIMITE_MB = 10;
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
 app.use(express.static(path.join(__dirname)));
+
+app.get("/", (_req, res) => {
+  res.send("API do Canal de Comunicação está ativa.");
+});
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true });
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -26,10 +41,14 @@ const upload = multer({
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
-  secure: true, // true para 465, false para 587
+  secure: true,
   auth: {
     user: process.env.EMAIL,
     pass: process.env.EMAIL_PASSWORD
+  },
+  // Render não alcança Gmail via IPv6; força IPv4 para evitar ENETUNREACH.
+  lookup: (hostname, _options, callback) => {
+    dns.lookup(hostname, { family: 4 }, callback);
   }
 });
 

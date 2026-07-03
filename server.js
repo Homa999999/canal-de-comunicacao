@@ -9,24 +9,21 @@ const app = express();
 const LIMITE_MB = 10;
 
 // 1. Express: Revisão, Middlewares
-// ---
-// Problemas encontrados:
-// - app.use(express.static(path.join(__dirname))) está expondo arquivos estáticos no backend, o que não é necessário para uma API pura, além de poder causar conflito de rota, servindo HTML na rota /enviar caso um arquivo index.html exista no diretório raiz. Remover!
-// - Faltava o express.json(), mas o multer lida com multipart/form-data (não precisa para /enviar).
-// - CORS habilitado OK.
-// - Adicionei um healthcheck em / para facilitar debug com o Render.
-// - Se precisar de logs detalhados de CORS ou diagnóstico, ative `app.options('*', cors())`.
-// --- Medida tomada: removido express.static
 
 // CORS seguro para permitir apenas frontend de produção e desenvolvimento
 app.use(cors({
   origin: [
-    "https://homa999999.github.io/canal-de-comunicacao",               // troque para sua URL do GitHub Pages ao deplyar
+    "https://homa999999.github.io",               // troque para sua URL do GitHub Pages ao deplyar
     "http://localhost:3000",
     "http://localhost:5173"
   ]
 }));
 
+// Healthcheck para a rota principal "/"
+// Isso faz com que GET / retorne uma resposta ao invés de "CANNOT GET /"
+app.get("/", (req, res) => {
+  res.send("API do Canal de Comunicação está ativa.");
+});
 
 // 2. Multer: Limitador de anexos
 const upload = multer({

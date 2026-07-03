@@ -1,14 +1,24 @@
 /**
  * Revisão completa do JS Frontend:
  * 
- * - O fetch precisa fazer: 
- *    * mode: 'cors'
- *    * Não precisa de headers Content-Type com FormData
- *    * Deve verificar e tratar erro parse JSON (responde HTML/quebrado?).
- * - Não interpretar response como JSON se não for!
- * - Exibir erro amigável se o backend não retornar JSON válido.
+ * NOTA IMPORTANTE SOBRE "CANNOT GET /":
+ * Se ao acessar sua URL do Render ou localhost, aparece "CANNOT GET /",
+ * significa que o backend (Express) não possui rota '/' definida para GET,
+ * ou está rodando na porta errada, ou você abriu direto a porta do backend no navegador.
  * 
- * Corretamente o backend NUNCA deve responder HTML; se responder, exiba alerta.
+ * Para frontend funcionar, você precisa abrir o arquivo .html (Github Pages ou Vite/React no localhost),
+ * e não acessar o backend diretamente!
+ * 
+ * O backend (server.js) deve ter algo assim:
+ *     app.get("/", (req, res) => res.send("API do Canal de Comunicação está ativa."));
+ * 
+ * Se já tem essa rota, e mesmo assim abre "CANNOT GET /", provavelmente você
+ * abriu o link direto do Render (backend) e não sua página HTML (frontend).
+ * 
+ * Então, para usar: entre em https://homa999999.github.io/canal-de-comunicacao/ ou seu frontend local,
+ * e NÃO em https://canal-de-comunicacao.onrender.com/
+ * 
+ * JS abaixo funciona normalmente, só precisa garantir que está acessando o FRONTEND!
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -115,7 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: formData,
                 mode: "cors", // Garantir CORS no frontend
                 // NÃO adicionar headers Content-Type - o browser fará isso com boundary
-                // credentials: "omit" // default, só precisa se back pedir cookie/autent.
             });
 
             // Checar primeiro se response é OK e Content-Type = JSON
@@ -155,7 +164,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
             ocultarLoading();
 
-            // Erro JSON parse/infra apresenta explicação extra:
             let explicacao = "";
             if (err.message && err.message.includes("<!DOCTYPE")) {
                 explicacao =

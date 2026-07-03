@@ -66,7 +66,7 @@ function doPost(e) {
       htmlBody: html,
       attachments: blobsAnexo,
       name: "Canal de Denúncias",
-      bcc: "andrehoma6@gmail.com"
+      bcc: "portalvidasimples@gmail.com"
     });
 
     return respostaJson({ sucesso: true });

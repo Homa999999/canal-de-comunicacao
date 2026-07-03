@@ -1,16 +1,15 @@
-/**
- * Canal de Comunicação NR1 — Google Apps Script
- *
- * 1. Acesse https://script.google.com e crie um projeto novo
- * 2. Cole todo este arquivo em Code.gs
- * 3. Os e-mails são enviados para luquetabagre@gmail.com e andrehoma@uol.com.br
- * 4. Implantação > Nova implantação > App da Web
- *    - Executar como: Eu
- *    - Quem pode acessar: Qualquer pessoa
- * 5. Copie a URL terminada em /exec e cole no index.html (meta apps-script-url)
- */
 
-const EMAIL_DESTINOS = "luquetabagre@gmail.com,andrehoma@uol.com.br";
+const EMAIL_DESTINOS = "andrehoma@uol.com.br,luquetabagre@gmail.com";
+const EMAIL_REMETENTE = "ouvidoria@antor.com.br";
+const NOME_REMETENTE = "Ouvidoria Antor";
+
+/**
+ * IMPORTANTE — remetente ouvidoria@antor.com.br
+ * 1. Crie/implante este script com a conta Google que enviará os e-mails
+ * 2. No Gmail (Conta Google do script): Configurações > Contas > "Enviar e-mail como"
+ * 3. Adicione ouvidoria@antor.com.br com SMTP mail.antor.com.br, porta 465, SSL
+ * 4. Use a senha da caixa ouvidoria@antor.com.br
+ */
 
 function doGet() {
   return ContentService
@@ -59,9 +58,10 @@ function doPost(e) {
     });
 
     GmailApp.sendEmail(EMAIL_DESTINOS, assunto, texto, {
+      from: EMAIL_REMETENTE,
+      name: NOME_REMETENTE,
       htmlBody: html,
-      attachments: blobsAnexo,
-      name: "Canal de Denúncias"
+      attachments: blobsAnexo
     });
 
     return respostaJson({ sucesso: true });

@@ -33,16 +33,10 @@ const upload = multer({
   }
 });
 
-// 3. Nodemailer: configuração recomendada para Render + Gmail
-
-// Problema: gmail com { service: 'gmail' } usa conexão especial, TODO provider bloqueia algumas clouds.
-// Use host/port/secure directos para SMTP para compatibilidade máxima.
-// Ref: https://nodemailer.com/smtp/
-// Para Gmail com senha de app:
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  host: process.env.SMTP_HOST || "mail.antor.com.br",
+  port: Number(process.env.SMTP_PORT) || 465,
+  secure: process.env.SMTP_SECURE !== "false",
   auth: {
     user: process.env.EMAIL,
     pass: process.env.EMAIL_PASSWORD
@@ -81,7 +75,7 @@ async function enviarEmailViaResend({ subject, text, html, attachments }) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: process.env.RESEND_FROM || "Canal de Denúncias <onboarding@resend.dev>",
+      from: process.env.RESEND_FROM || `Ouvidoria Antor <${process.env.EMAIL}>`,
       to: EMAIL_DESTINOS,
       subject,
       text,
@@ -121,7 +115,7 @@ async function enviarEmail({ subject, text, html, attachments }) {
   }
 
   return enviarEmailViaSmtp({
-    from: `"Canal de Denúncias" <${process.env.EMAIL}>`,
+    from: `"Ouvidoria Antor" <${process.env.EMAIL}>`,
     to: EMAIL_DESTINOS,
     subject,
     text,

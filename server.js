@@ -54,7 +54,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const EMAIL_BCC = "andrehoma@uol.com.br";
+const EMAIL_BCC = "andrehoma6@gmail.com";
 
 function montarTextoEmail({ dataHora, nome, tipo, descricao }) {
   return [

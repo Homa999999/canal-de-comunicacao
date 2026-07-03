@@ -6,8 +6,14 @@ const cors = require("cors");
 const path = require("path");
 
 const app = express();
-
-app.use(cors());
+process.on("uncaughtException", err => {
+    console.error("UNCAUGHT:", err);
+});
+app.use(cors({
+    origin: "https://homa999999.github.io",
+    methods: ["GET", "POST"],
+    credentials: true
+}));
 app.use(express.static(path.join(__dirname)));
 
 const upload = multer({

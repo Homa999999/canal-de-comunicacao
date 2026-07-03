@@ -19,7 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
             fileList.textContent = "";
             return;
         }
-
+        process.on("uncaughtException", err => {
+            console.error("UNCAUGHT:", err);
+        });
         const nomes = Array.from(inputAnexos.files).map(f => f.name).join(", ");
         fileList.innerHTML = `<i class="fa-solid fa-file-circle-check"></i>${nomes}`;
         fileList.classList.remove("hidden");
@@ -47,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return null;
     }
+    
 
     function bloquearEnvio() {
         btnEnviar.disabled = true;
@@ -125,13 +128,18 @@ document.addEventListener("DOMContentLoaded", () => {
             atualizarListaArquivos();
 
         } catch (err) {
-            return res.status(500).json({
-                sucesso: false,
-                erro: "Erro interno"
-              });
+            console.error(err);
+            ocultarLoading();
+            await Swal.fire({
+                icon: "error",
+                title: "Erro ao enviar",
+                text: "Ocorreu um erro interno ao tentar enviar o comunicado. Por favor, tente novamente.",
+                confirmButtonText: "OK",
+                confirmButtonColor: COR_PRIMARIA
+            });
         }
-
     });
+   
 
     const radios = document.querySelectorAll('input[name="resposta"]');
     const contato = document.getElementById("contato");
@@ -165,5 +173,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
         });
     });
-
 });

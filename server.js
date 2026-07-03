@@ -46,11 +46,84 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL,
     pass: process.env.EMAIL_PASSWORD
   },
-  // Render não alcança Gmail via IPv6; força IPv4 para evitar ENETUNREACH.
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 30000,
   lookup: (hostname, _options, callback) => {
     dns.lookup(hostname, { family: 4 }, callback);
   }
 });
+
+function montarTextoEmail({ protocolo, dataHora, nome, tipo, descricao }) {
+  return [
+    "Nova Manifestação Recebida",
+    "",
+    `Protocolo: ${protocolo}`,
+    `Data/Hora: ${dataHora}`,
+    `Nome: ${nome || "Não informado"}`,
+    `Tipo: ${tipo}`,
+    "",
+    "Descrição:",
+    descricao
+  ].join("\n");
+}
+
+async function enviarEmailViaResend({ to, subject, text, html, attachments }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM || "Canal de Denúncias <onboarding@resend.dev>",
+      to: [to],
+      subject,
+      text,
+      html,
+      attachments: attachments.map((anexo) => ({
+        filename: anexo.filename,
+        content: anexo.content.toString("base64")
+      }))
+    })
+  });
+
+  const payload = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(payload.message || `Falha ao enviar via Resend (HTTP ${res.status}).`);
+  }
+}
+
+async function enviarEmailViaSmtp(mailOptions) {
+  const TIMEOUT_MS = 45000;
+
+  await Promise.race([
+    transporter.sendMail(mailOptions),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(
+        process.env.RENDER
+          ? "O Render gratuito bloqueia SMTP (portas 465/587). Configure RESEND_API_KEY no painel do Render."
+          : "Timeout ao enviar e-mail (SMTP fora do ar?)."
+      )), TIMEOUT_MS)
+    )
+  ]);
+}
+
+async function enviarEmail({ to, subject, text, html, attachments }) {
+  if (process.env.RESEND_API_KEY) {
+    return enviarEmailViaResend({ to, subject, text, html, attachments });
+  }
+
+  return enviarEmailViaSmtp({
+    from: `"Canal de Denúncias" <${process.env.EMAIL}>`,
+    to,
+    subject,
+    text,
+    html,
+    attachments
+  });
+}
 
 // 4. Funções auxiliares (inalteradas)
 function formatarDataHora() {
@@ -251,43 +324,22 @@ app.post("/enviar", (req, res) => {
         });
       }
 
-      // O await do sendMail pode travar se as credenciais estiverem erradas ou se porta/bloqueio SMTP. Timeout padrão ~10s.
-      // Setar timeout de 20s para a promise do sendMail, para nunca pendurar indefinidamente
-      const sendMailPromise = transporter.sendMail({
-        from: `"Canal de Denúncias" <${process.env.EMAIL}>`,
-        to: process.env.EMAIL_DESTINO,
-        subject: `Nova manifestação - ${tipo} - ${protocolo}`,
-        text: [
-          "Nova Manifestação Recebida",
-          "",
-          `Protocolo: ${protocolo}`,
-          `Data/Hora: ${dataHora}`,
-          `Nome: ${nome || "Não informado"}`,
-          `Tipo: ${tipo}`,
-          "",
-          "Descrição:",
-          descricao
-        ].join("\n"),
-        html: montarEmailHtml({
+      const html = montarEmailHtml({
           protocolo,
           dataHora,
           nome,
           tipo,
           descricao,
           anexos
-        }),
+        });
+
+      await enviarEmail({
+        to: process.env.EMAIL_DESTINO,
+        subject: `Nova manifestação - ${tipo} - ${protocolo}`,
+        text: montarTextoEmail({ protocolo, dataHora, nome, tipo, descricao }),
+        html,
         attachments: anexos
       });
-
-      // timeout em 20s
-      const TIMEOUT_MS = 20000;
-
-      await Promise.race([
-        sendMailPromise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout ao enviar e-mail (SMTP fora do ar?).")), TIMEOUT_MS)
-        )
-      ]);
 
       return safeJson(200, {
         sucesso: true,
@@ -313,4 +365,10 @@ app.post("/enviar", (req, res) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+
+  if (process.env.RENDER && !process.env.RESEND_API_KEY) {
+    console.warn(
+      "AVISO: Render gratuito bloqueia SMTP. Configure RESEND_API_KEY (e RESEND_FROM) no painel do Render."
+    );
+  }
 });

@@ -31,10 +31,15 @@
     <form id="form">
 
         <div class="campo">
-            <label for="nome">
-                <i class="fa-regular fa-user"></i>
-                Nome <span>(opcional)</span>
-            </label>
+            <div class="campo-header">
+                <label for="nome">
+                    <i class="fa-regular fa-user"></i>
+                    Nome <span>(opcional)</span>
+                </label>
+                <button type="button" class="btn-limpar" data-limpar="nome" aria-label="Limpar nome">
+                    <i class="fa-solid fa-xmark"></i> Limpar
+                </button>
+            </div>
             <div class="input-wrap">
                 <i class="fa-regular fa-user input-icon"></i>
                 <input type="text" id="nome" name="nome" placeholder="Digite seu nome">
@@ -42,10 +47,15 @@
         </div>
 
         <div class="campo">
-            <label for="tipo">
-                <i class="fa-solid fa-tag"></i>
-                Tipo da ocorrência
-            </label>
+            <div class="campo-header">
+                <label for="tipo">
+                    <i class="fa-solid fa-tag"></i>
+                    Tipo da ocorrência
+                </label>
+                <button type="button" class="btn-limpar" data-limpar="tipo" aria-label="Limpar tipo">
+                    <i class="fa-solid fa-xmark"></i> Limpar
+                </button>
+            </div>
             <div class="input-wrap">
                 <i class="fa-solid fa-list input-icon"></i>
                 <select id="tipo" name="tipo" required>
@@ -61,10 +71,15 @@
         </div>
 
         <div class="campo">
-            <label for="descricao">
-                <i class="fa-solid fa-align-left"></i>
-                Descrição
-            </label>
+            <div class="campo-header">
+                <label for="descricao">
+                    <i class="fa-solid fa-align-left"></i>
+                    Descrição
+                </label>
+                <button type="button" class="btn-limpar" data-limpar="descricao" aria-label="Limpar descrição">
+                    <i class="fa-solid fa-xmark"></i> Limpar
+                </button>
+            </div>
             <div class="input-wrap textarea-wrap">
                 <textarea
                     id="descricao"
@@ -86,10 +101,10 @@
                 <label for="anexos" class="file-label">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                     <span class="file-text">Clique para selecionar ou arraste os arquivos</span>
-                    <small>Máximo de 10 arquivos, 10MB cada</small>
+                    <small>Máximo de 10 arquivos, 23 MB no total</small>
                 </label>
             </div>
-            <p id="file-list" class="file-list hidden"></p>
+            <ul id="file-list" class="file-list hidden" aria-live="polite"></ul>
         </div>
 
         <button type="submit" id="btn-enviar">

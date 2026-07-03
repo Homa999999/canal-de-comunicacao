@@ -7,7 +7,8 @@ const multer = require("multer");
 const cors = require("cors");
 
 const app = express();
-const LIMITE_MB = 10;
+const LIMITE_TOTAL_MB = 23;
+const LIMITE_TOTAL_BYTES = LIMITE_TOTAL_MB * 1024 * 1024;
 
 app.use(cors({
   origin: true,
@@ -27,7 +28,7 @@ app.get("/health", (_req, res) => {
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: LIMITE_TOTAL_BYTES,
     files: 10
   }
 });
@@ -277,7 +278,7 @@ app.post("/enviar", (req, res) => {
       if (err.code === "LIMIT_FILE_SIZE") {
         return safeJson(400, {
           sucesso: false,
-          erro: `Cada arquivo deve ter no máximo ${LIMITE_MB}MB.`
+          erro: `Um dos arquivos excede o limite total de ${LIMITE_TOTAL_MB}MB.`
         });
       }
       if (err.code === "LIMIT_FILE_COUNT") {
@@ -308,6 +309,14 @@ app.post("/enviar", (req, res) => {
         filename: file.originalname,
         content: file.buffer
       }));
+
+      const tamanhoTotal = (req.files || []).reduce((total, file) => total + file.size, 0);
+      if (tamanhoTotal > LIMITE_TOTAL_BYTES) {
+        return safeJson(400, {
+          sucesso: false,
+          erro: `Os anexos somam mais de ${LIMITE_TOTAL_MB}MB no total. Remova arquivos ou envie versões menores.`
+        });
+      }
 
       // Validação mínima
       if (!tipo || !descricao) {

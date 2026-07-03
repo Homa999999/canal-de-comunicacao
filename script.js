@@ -125,16 +125,10 @@ document.addEventListener("DOMContentLoaded", () => {
             atualizarListaArquivos();
 
         } catch (err) {
-            console.error(err);
-            ocultarLoading();
-
-            Swal.fire({
-                icon: "error",
-                title: "Erro ao enviar",
-                text: err.message || "Não foi possível enviar o comunicado. Tente novamente.",
-                confirmButtonText: "OK",
-                confirmButtonColor: COR_PRIMARIA
-            });
+            return res.status(500).json({
+                sucesso: false,
+                erro: "Erro interno"
+              });
         }
 
     });

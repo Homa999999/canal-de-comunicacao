@@ -13,7 +13,9 @@
  *   - Conclua a verificação (link enviado para ouvidoria@ — peça à Antor encaminhar)
  *
  * PASSO 2 — Apps Script (logado com SEU Gmail):
- *   script.google.com > cole este código > Executar doGet uma vez e autorize
+ *   script.google.com > cole este código
+ *   > Serviços (+) > Gmail API > Adicionar   (OBRIGATÓRIO para remetente @antor)
+ *   > Executar testarRemetente() — deve confirmar alias verificado
  *   > Implantar > Nova implantação > App da Web
  *   > Executar como: Eu | Quem pode acessar: Qualquer pessoa
  *
@@ -29,6 +31,98 @@ function doGet() {
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, mensagem: "Canal NR1 ativo. Use POST." }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Execute manualmente para confirmar se ouvidoria@antor.com.br está verificado. */
+function testarRemetente() {
+  const alias = obterAliasRemetente();
+  Logger.log("Alias OK: " + alias.sendAsEmail + " (" + alias.verificationStatus + ")");
+}
+
+function obterAliasRemetente() {
+  const aliases = Gmail.Users.Settings.SendAs.list("me").sendAs || [];
+  const alias = aliases.find(function (item) {
+    return item.sendAsEmail.toLowerCase() === EMAIL_REMETENTE.toLowerCase();
+  });
+
+  if (!alias) {
+    throw new Error(
+      'ouvidoria@antor.com.br não está em "Enviar e-mail como". ' +
+      "Configure em Gmail > Configurações > Contas e importação."
+    );
+  }
+
+  if (alias.verificationStatus !== "accepted") {
+    throw new Error(
+      "ouvidoria@antor.com.br ainda não foi verificado. " +
+      "Abra o link de confirmação enviado para essa caixa."
+    );
+  }
+
+  return alias;
+}
+
+function codificarAssuntoUtf8(assunto) {
+  return "=?UTF-8?B?" + Utilities.base64Encode(assunto, Utilities.Charset.UTF_8) + "?=";
+}
+
+function codificarMensagemRaw(mime) {
+  return Utilities.base64EncodeWebSafe(mime)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+function enviarComoAlias(destinatarios, assunto, textoPlano, html, anexos) {
+  obterAliasRemetente();
+
+  const boundaryMixed = "mixed_" + Utilities.getUuid();
+  const boundaryAlt = "alt_" + Utilities.getUuid();
+  const fromHeader = NOME_REMETENTE + " <" + EMAIL_REMETENTE + ">";
+
+  const partes = [
+    "MIME-Version: 1.0",
+    "From: " + fromHeader,
+    "To: " + destinatarios,
+    "Subject: " + codificarAssuntoUtf8(assunto),
+    'Content-Type: multipart/mixed; boundary="' + boundaryMixed + '"',
+    "",
+    "--" + boundaryMixed,
+    'Content-Type: multipart/alternative; boundary="' + boundaryAlt + '"',
+    "",
+    "--" + boundaryAlt,
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: base64",
+    "",
+    Utilities.base64Encode(textoPlano, Utilities.Charset.UTF_8),
+    "",
+    "--" + boundaryAlt,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: base64",
+    "",
+    Utilities.base64Encode(html, Utilities.Charset.UTF_8),
+    "",
+    "--" + boundaryAlt + "--"
+  ];
+
+  anexos.forEach(function (blob) {
+    const nome = blob.getName() || "anexo";
+    const mime = blob.getContentType() || "application/octet-stream";
+    partes.push(
+      "--" + boundaryMixed,
+      'Content-Type: ' + mime + '; name="' + nome + '"',
+      'Content-Disposition: attachment; filename="' + nome + '"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      Utilities.base64Encode(blob.getBytes())
+    );
+  });
+
+  partes.push("--" + boundaryMixed + "--", "");
+
+  Gmail.Users.Messages.send({
+    raw: codificarMensagemRaw(partes.join("\r\n"))
+  }, "me");
 }
 
 function doPost(e) {
@@ -71,13 +165,7 @@ function doPost(e) {
       anexos: nomesAnexos
     });
 
-    // createDraft + send usa o alias "Enviar e-mail como" configurado no Gmail
-    GmailApp.createDraft(EMAIL_DESTINOS, assunto, texto, {
-      from: EMAIL_REMETENTE,
-      name: NOME_REMETENTE,
-      htmlBody: html,
-      attachments: blobsAnexo
-    }).send();
+    enviarComoAlias(EMAIL_DESTINOS, assunto, texto, html, blobsAnexo);
 
     return respostaJson({ sucesso: true });
   } catch (erro) {

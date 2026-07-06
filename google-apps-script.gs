@@ -263,7 +263,7 @@ function montarEmailHtml(dados) {
     "<tr>",
     '<td style="background:linear-gradient(135deg,#ffcf00 0%,#ffb800 100%); padding:32px;">',
     '<p style="margin:0 0 6px; font-size:12px; font-weight:600; color:rgba(30,41,59,0.75); text-transform:uppercase; letter-spacing:0.1em;">Canal NR1</p>',
-    '<h1 style="margin:0; font-size:24px; font-weight:700; color:#1e293b;">Nova comunicado recebido</h1>',
+    '<h1 style="margin:0; font-size:24px; font-weight:700; color:#1e293b;">Novo comunicado recebido</h1>',
     "</td>",
     "</tr>",
     "<tr>",

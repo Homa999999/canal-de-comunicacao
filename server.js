@@ -29,7 +29,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: LIMITE_TOTAL_BYTES,
-    files: 10
+    files: 3
   }
 });
 
@@ -317,6 +317,20 @@ app.post("/enviar", (req, res) => {
         return safeJson(400, {
           sucesso: false,
           erro: "Tipo e descrição são obrigatórios."
+        });
+      }
+
+      if (descricao.length > 757) {
+        return safeJson(400, {
+          sucesso: false,
+          erro: "A descrição excede o limite de 757 caracteres."
+        });
+      }
+
+      if ((req.files || []).length > 3) {
+        return safeJson(400, {
+          sucesso: false,
+          erro: "É permitido enviar no máximo 3 imagens."
         });
       }
 

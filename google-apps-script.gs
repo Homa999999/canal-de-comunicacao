@@ -141,6 +141,14 @@ function doPost(e) {
       return respostaJson({ sucesso: false, erro: "Tipo e descrição são obrigatórios." }, 400);
     }
 
+    if (descricao.length > 757) {
+      return respostaJson({ sucesso: false, erro: "A descrição excede o limite de 757 caracteres." }, 400);
+    }
+
+    if (anexosPayload.length > 3) {
+      return respostaJson({ sucesso: false, erro: "É permitido enviar no máximo 3 imagens." }, 400);
+    }
+
     const dataHora = formatarDataHora();
 
     const blobsAnexo = anexosPayload.map(function (anexo) {

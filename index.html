@@ -86,22 +86,24 @@
                     rows="6"
                     placeholder="Descreva detalhadamente o ocorrido..."
                     name="descricao"
+                    maxlength="757"
                     required
                 ></textarea>
             </div>
+            <p id="contador-descricao" class="contador-caracteres">0 / 757 caracteres</p>
         </div>
 
         <div class="campo">
             <label for="anexos">
                 <i class="fa-solid fa-paperclip"></i>
-                Anexar fotos ou documentos
+                Anexar imagens
             </label>
             <div class="file-upload">
-                <input type="file" id="anexos" multiple name="anexos" accept="image/*,.pdf,.doc,.docx">
+                <input type="file" id="anexos" multiple name="anexos" accept="image/*">
                 <label for="anexos" class="file-label">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span class="file-text">Clique para selecionar ou arraste os arquivos</span>
-                    <small>Máximo de 10 arquivos, 23 MB no total</small>
+                    <span class="file-text">Clique para selecionar ou arraste as imagens</span>
+                    <small>Máximo de 3 imagens, 23 MB no total</small>
                 </label>
             </div>
             <ul id="file-list" class="file-list hidden" aria-live="polite"></ul>

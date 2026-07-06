@@ -55,13 +55,46 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingMessage = document.getElementById("loading-message");
     const fileList = document.getElementById("file-list");
     const inputAnexos = document.getElementById("anexos");
+    const textareaDescricao = document.getElementById("descricao");
+    const contadorDescricao = document.getElementById("contador-descricao");
 
     const COR_PRIMARIA = "#4f46e5";
-    const MAX_ARQUIVOS = 10;
+    const MAX_IMAGENS = 3;
+    const LIMITE_CARACTERES = 757;
     const LIMITE_TOTAL_MB = 23;
     const LIMITE_TOTAL_BYTES = LIMITE_TOTAL_MB * 1024 * 1024;
 
+    function ehImagem(arquivo) {
+        return arquivo.type.startsWith("image/");
+    }
+
+    function atualizarContadorDescricao() {
+        const total = textareaDescricao.value.length;
+        contadorDescricao.textContent = `${total} / ${LIMITE_CARACTERES} caracteres`;
+        contadorDescricao.classList.toggle("limite-atingido", total >= LIMITE_CARACTERES);
+    }
+
+    function validarDescricao() {
+        const texto = textareaDescricao.value.trim();
+        if (!texto) {
+            return {
+                titulo: "Descrição obrigatória",
+                texto: "Preencha a descrição do ocorrido."
+            };
+        }
+        if (texto.length > LIMITE_CARACTERES) {
+            return {
+                titulo: "Descrição muito longa",
+                texto: `A descrição tem ${texto.length} caracteres, mas o limite é ${LIMITE_CARACTERES}.`
+            };
+        }
+        return null;
+    }
+
     let arquivosAnexos = [];
+
+    textareaDescricao?.addEventListener("input", atualizarContadorDescricao);
+    atualizarContadorDescricao();
 
     function calcularTamanhoTotal(arquivos) {
         return arquivos.reduce((total, arquivo) => total + arquivo.size, 0);
@@ -115,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         fileList.innerHTML = `
             <li class="file-list-header">
-                <span>${arquivosAnexos.length} arquivo(s) · ${formatarTamanho(totalBytes)} / ${LIMITE_TOTAL_MB} MB</span>
+                <span>${arquivosAnexos.length} imagem(ns) · ${formatarTamanho(totalBytes)} / ${LIMITE_TOTAL_MB} MB</span>
                 <button type="button" class="btn-limpar btn-limpar-inline" data-limpar="anexos">
                     <i class="fa-solid fa-xmark"></i> Limpar todos
                 </button>
@@ -135,10 +168,18 @@ document.addEventListener("DOMContentLoaded", () => {
     function validarAnexos(arquivos) {
         if (!arquivos.length) return null;
 
-        if (arquivos.length > MAX_ARQUIVOS) {
+        const naoImagem = arquivos.find((arquivo) => !ehImagem(arquivo));
+        if (naoImagem) {
             return {
-                titulo: "Limite de arquivos",
-                texto: `Você selecionou ${arquivos.length} arquivos, mas o máximo permitido é ${MAX_ARQUIVOS}.`,
+                titulo: "Arquivo inválido",
+                texto: `"${naoImagem.name}" não é uma imagem. Envie apenas JPG, PNG, GIF ou WebP.`
+            };
+        }
+
+        if (arquivos.length > MAX_IMAGENS) {
+            return {
+                titulo: "Limite de imagens",
+                texto: `Você selecionou ${arquivos.length} imagens, mas o máximo permitido é ${MAX_IMAGENS}.`
             };
         }
 
@@ -191,7 +232,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         if (campo === "descricao") {
-            document.getElementById("descricao").value = "";
+            textareaDescricao.value = "";
+            atualizarContadorDescricao();
             return;
         }
         if (campo === "anexos") {
@@ -240,6 +282,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        const erroDescricao = validarDescricao();
+        if (erroDescricao) {
+            Swal.fire({
+                icon: "warning",
+                title: erroDescricao.titulo,
+                text: erroDescricao.texto,
+                confirmButtonText: "Entendi",
+                confirmButtonColor: COR_PRIMARIA
+            });
+            return;
+        }
 
         const erroAnexo = validarAnexos(arquivosAnexos);
         if (erroAnexo) {
@@ -295,6 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             form.reset();
             limparAnexos();
+            atualizarContadorDescricao();
 
         } catch (err) {
             clearTimeout(timeout);

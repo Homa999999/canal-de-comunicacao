@@ -149,7 +149,7 @@ function montarEmailHtml({ dataHora, nome, tipo, descricao, anexos }) {
     ? anexos.map(a => `
             <tr>
                 <td style="padding:6px 0; font-size:14px; color:#475569;">
-                    <span style="display:inline-block; width:8px; height:8px; background:#7c3aed; border-radius:50%; margin-right:8px;"></span>
+                    <span style="display:inline-block; width:8px; height:8px; background:#ffcf00; border-radius:50%; margin-right:8px;"></span>
                     ${escaparHtml(a.filename)}
                 </td>
             </tr>
@@ -159,10 +159,10 @@ function montarEmailHtml({ dataHora, nome, tipo, descricao, anexos }) {
   const blocoAnexos = anexos.length > 0 ? `
         <tr>
             <td style="padding:0 32px 24px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf5ff; border-radius:12px; border:1px solid #ede9fe;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb; border-radius:12px; border:1px solid #ffe566;">
                     <tr>
                         <td style="padding:16px 20px;">
-                            <p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#7c3aed; text-transform:uppercase; letter-spacing:0.06em;">Anexos (${anexos.length})</p>
+                            <p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#e6b800; text-transform:uppercase; letter-spacing:0.06em;">Anexos (${anexos.length})</p>
                             <table width="100%" cellpadding="0" cellspacing="0">${listaAnexos}</table>
                         </td>
                     </tr>
@@ -180,9 +180,9 @@ function montarEmailHtml({ dataHora, nome, tipo, descricao, anexos }) {
                 <td align="center">
                     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(79,70,229,0.1);">
                         <tr>
-                            <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%); padding:32px;">
-                                <p style="margin:0 0 6px; font-size:12px; font-weight:600; color:rgba(255,255,255,0.75); text-transform:uppercase; letter-spacing:0.1em;">Canal NR1</p>
-                                <h1 style="margin:0; font-size:24px; font-weight:700; color:#ffffff; letter-spacing:-0.02em;">Nova comunicado recebido</h1>
+                            <td style="background:linear-gradient(135deg,#ffcf00 0%,#ffb800 100%); padding:32px;">
+                                <p style="margin:0 0 6px; font-size:12px; font-weight:600; color:rgba(30,41,59,0.75); text-transform:uppercase; letter-spacing:0.1em;">Canal NR1</p>
+                                <h1 style="margin:0; font-size:24px; font-weight:700; color:#1e293b; letter-spacing:-0.02em;">Nova comunicado recebido</h1>
                             </td>
                         </tr>
                         <tr>
@@ -228,7 +228,7 @@ function montarEmailHtml({ dataHora, nome, tipo, descricao, anexos }) {
                         <tr>
                             <td style="padding:0 32px 24px;">
                                 <p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em;">Descrição</p>
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border-radius:12px; border-left:4px solid #4f46e5;">
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border-radius:12px; border-left:4px solid #ffcf00;">
                                     <tr>
                                         <td style="padding:18px 20px; font-size:15px; line-height:1.7; color:#334155;">
                                             ${escaparHtml(descricao)}
@@ -320,10 +320,10 @@ app.post("/enviar", (req, res) => {
         });
       }
 
-      if (descricao.length > 757) {
+      if (descricao.length > 500) {
         return safeJson(400, {
           sucesso: false,
-          erro: "A descrição excede o limite de 757 caracteres."
+          erro: "A descrição excede o limite de 500 caracteres."
         });
       }
 

@@ -56,22 +56,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileList = document.getElementById("file-list");
     const inputAnexos = document.getElementById("anexos");
     const textareaDescricao = document.getElementById("descricao");
-    const contadorDescricao = document.getElementById("contador-descricao");
 
-    const COR_PRIMARIA = "#4f46e5";
+    const COR_PRIMARIA = "#ffcf00";
     const MAX_IMAGENS = 3;
-    const LIMITE_CARACTERES = 757;
+    const LIMITE_CARACTERES = 500;
     const LIMITE_TOTAL_MB = 23;
     const LIMITE_TOTAL_BYTES = LIMITE_TOTAL_MB * 1024 * 1024;
 
     function ehImagem(arquivo) {
         return arquivo.type.startsWith("image/");
-    }
-
-    function atualizarContadorDescricao() {
-        const total = textareaDescricao.value.length;
-        contadorDescricao.textContent = `${total} / ${LIMITE_CARACTERES} caracteres`;
-        contadorDescricao.classList.toggle("limite-atingido", total >= LIMITE_CARACTERES);
     }
 
     function validarDescricao() {
@@ -92,9 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let arquivosAnexos = [];
-
-    textareaDescricao?.addEventListener("input", atualizarContadorDescricao);
-    atualizarContadorDescricao();
 
     function calcularTamanhoTotal(arquivos) {
         return arquivos.reduce((total, arquivo) => total + arquivo.size, 0);
@@ -233,7 +223,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (campo === "descricao") {
             textareaDescricao.value = "";
-            atualizarContadorDescricao();
             return;
         }
         if (campo === "anexos") {
@@ -349,7 +338,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             form.reset();
             limparAnexos();
-            atualizarContadorDescricao();
 
         } catch (err) {
             clearTimeout(timeout);

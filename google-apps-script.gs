@@ -1,15 +1,29 @@
+/**
+ * IMPLANTAÇÃO — ouvidoria@antor.com.br com senha de app (sem login na conta Antor)
+ *
+ * PASSO 1 — Configurar "Enviar e-mail como" no SEU Gmail (conta que roda o script):
+ *   Gmail > Configurações > Ver todas > Contas e importação > Enviar e-mail como
+ *   > Adicionar outro endereço de e-mail
+ *   - Nome: Ouvidoria Antor
+ *   - E-mail: ouvidoria@antor.com.br
+ *   - Desmarque "Tratar como um alias" se aparecer
+ *   - SMTP: mail.antor.com.br | Porta 465 | SSL
+ *   - Usuário: ouvidoria@antor.com.br
+ *   - Senha: senha de app fornecida pela Antor
+ *   - Conclua a verificação (link enviado para ouvidoria@ — peça à Antor encaminhar)
+ *
+ * PASSO 2 — Apps Script (logado com SEU Gmail):
+ *   script.google.com > cole este código > Executar doGet uma vez e autorize
+ *   > Implantar > Nova implantação > App da Web
+ *   > Executar como: Eu | Quem pode acessar: Qualquer pessoa
+ *
+ * PASSO 3 — Site:
+ *   Cole a URL /exec no index.html (meta apps-script-url) e publique no GitHub Pages
+ */
 
 const EMAIL_DESTINOS = "andrehoma@uol.com.br,luquetabagre@gmail.com";
 const EMAIL_REMETENTE = "ouvidoria@antor.com.br";
 const NOME_REMETENTE = "Ouvidoria Antor";
-
-/**
- * IMPORTANTE — remetente ouvidoria@antor.com.br
- * 1. Crie/implante este script com a conta Google que enviará os e-mails
- * 2. No Gmail (Conta Google do script): Configurações > Contas > "Enviar e-mail como"
- * 3. Adicione ouvidoria@antor.com.br com SMTP mail.antor.com.br, porta 465, SSL
- * 4. Use a senha da caixa ouvidoria@antor.com.br
- */
 
 function doGet() {
   return ContentService
@@ -57,12 +71,13 @@ function doPost(e) {
       anexos: nomesAnexos
     });
 
-    GmailApp.sendEmail(EMAIL_DESTINOS, assunto, texto, {
+    // createDraft + send usa o alias "Enviar e-mail como" configurado no Gmail
+    GmailApp.createDraft(EMAIL_DESTINOS, assunto, texto, {
       from: EMAIL_REMETENTE,
       name: NOME_REMETENTE,
       htmlBody: html,
       attachments: blobsAnexo
-    });
+    }).send();
 
     return respostaJson({ sucesso: true });
   } catch (erro) {

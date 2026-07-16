@@ -50,16 +50,15 @@ const transporter = nodemailer.createTransport({
 });
 
 const EMAIL_DESTINOS = [
-  "luquetabagre@gmail.com",
-  "andrehoma@uol.com.br"
+  "rh@antor.com.br",
+  "marcelo@antor.com.br"
 ];
 
-function montarTextoEmail({ dataHora, nome, tipo, descricao }) {
+function montarTextoEmail({ dataHora, tipo, descricao }) {
   return [
     "Nova Manifestação Recebida",
     "",
     `Data/Hora: ${dataHora}`,
-    `Nome: ${nome || "Não informado"}`,
     `Tipo: ${tipo}`,
     "",
     "Descrição:",
@@ -143,7 +142,7 @@ function escaparHtml(texto = "") {
     .replace(/\n/g, "<br>");
 }
 
-function montarEmailHtml({ dataHora, nome, tipo, descricao, anexos }) {
+function montarEmailHtml({ dataHora, tipo, descricao, anexos }) {
   // ... igual ao original
   const listaAnexos = anexos.length > 0
     ? anexos.map(a => `
@@ -205,18 +204,6 @@ function montarEmailHtml({ dataHora, nome, tipo, descricao, anexos }) {
                                                     <td style="padding:14px 16px;">
                                                         <p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em;">Tipo</p>
                                                         <p style="margin:0; font-size:14px; font-weight:600; color:#1e293b;">${escaparHtml(tipo)}</p>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2" style="padding:0 0 16px 0; vertical-align:top;">
-                                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
-                                                <tr>
-                                                    <td style="padding:14px 16px;">
-                                                        <p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em;">Nome</p>
-                                                        <p style="margin:0; font-size:14px; font-weight:600; color:#1e293b;">${escaparHtml(nome || "Não informado")}</p>
                                                     </td>
                                                 </tr>
                                             </table>
@@ -292,7 +279,6 @@ app.post("/enviar", (req, res) => {
       const dataHora = formatarDataHora();
 
       const {
-        nome,
         tipo,
         descricao,
         desejaResposta,
@@ -336,7 +322,6 @@ app.post("/enviar", (req, res) => {
 
       const html = montarEmailHtml({
           dataHora,
-          nome,
           tipo,
           descricao,
           anexos
@@ -344,7 +329,7 @@ app.post("/enviar", (req, res) => {
 
       await enviarEmail({
         subject: `Nova manifestação - ${tipo}`,
-        text: montarTextoEmail({ dataHora, nome, tipo, descricao }),
+        text: montarTextoEmail({ dataHora, tipo, descricao }),
         html,
         attachments: anexos
       });

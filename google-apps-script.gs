@@ -23,7 +23,7 @@
  *   Cole a URL /exec no index.html (meta apps-script-url) e publique no GitHub Pages
  */
 
-const EMAIL_DESTINOS = "andrehoma@uol.com.br,luquetabagre@gmail.com";
+const EMAIL_DESTINOS = "rh@antor.com.br,marcelo@antor.com.br";
 const EMAIL_REMETENTE = "ouvidoria@antor.com.br";
 const NOME_REMETENTE = "Ouvidoria Antor";
 
@@ -132,7 +132,6 @@ function doPost(e) {
     }
 
     const data = JSON.parse(e.parameter.data);
-    const nome = data.nome || "";
     const tipo = data.tipo || "";
     const descricao = data.descricao || "";
     const anexosPayload = data.anexos || [];
@@ -164,10 +163,9 @@ function doPost(e) {
     });
 
     const assunto = "Nova manifestação - " + tipo;
-    const texto = montarTextoEmail({ dataHora, nome, tipo, descricao });
+    const texto = montarTextoEmail({ dataHora, tipo, descricao });
     const html = montarEmailHtml({
       dataHora,
-      nome,
       tipo,
       descricao,
       anexos: nomesAnexos
@@ -213,7 +211,6 @@ function montarTextoEmail(dados) {
     "Nova Manifestação Recebida",
     "",
     "Data/Hora: " + dados.dataHora,
-    "Nome: " + (dados.nome || "Não informado"),
     "Tipo: " + dados.tipo,
     "",
     "Descrição:",
@@ -270,8 +267,6 @@ function montarEmailHtml(dados) {
     '<td style="padding:28px 32px 8px;">',
     '<p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Data / Hora</p>',
     '<p style="margin:0 0 16px; font-size:14px; color:#1e293b;">' + escaparHtml(dados.dataHora) + "</p>",
-    '<p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Nome</p>',
-    '<p style="margin:0 0 16px; font-size:14px; color:#1e293b;">' + escaparHtml(dados.nome || "Não informado") + "</p>",
     '<p style="margin:0 0 4px; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Tipo</p>',
     '<p style="margin:0 0 16px; font-size:14px; color:#1e293b;">' + escaparHtml(dados.tipo) + "</p>",
     "</td>",

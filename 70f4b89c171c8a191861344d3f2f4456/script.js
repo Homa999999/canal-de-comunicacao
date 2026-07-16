@@ -41,7 +41,6 @@ async function montarPayload(form, arquivosAnexos) {
         : [];
 
     return {
-        nome: formData.get("nome") || "",
         tipo: formData.get("tipo") || "",
         descricao: formData.get("descricao") || "",
         anexos
@@ -213,10 +212,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function limparCampo(campo) {
-        if (campo === "nome") {
-            document.getElementById("nome").value = "";
-            return;
-        }
         if (campo === "tipo") {
             document.getElementById("tipo").value = "";
             return;
